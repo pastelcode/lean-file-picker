@@ -128,16 +128,23 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
                     File cacheDir = activity.getCacheDir();
                     File outputFile = new File(cacheDir, name);
                     eventSink.success(true);
-                    new Thread(() -> {
-                        boolean success = copyFile(documentUri, outputFile);
-                        activity.runOnUiThread(() -> {
-                            eventSink.success(false);
-                            if (success) {
-                                result.success(outputFile.toString());
-                            } else {
-                                result.success(null);
-                            }
-                        });
+                    //Reverted to Runnable classes to fix issue with android compilation
+                     new Thread(new Runnable() {
+                         @Override
+                         public void run(){
+                             final boolean success = copyFile(documentUri, outputFile);
+                             activity.runOnUiThread(new Runnable() {
+                                 @Override
+                                 public void run(){
+                                     eventSink.success(false);
+                                     if (success) {
+                                         result.success(outputFile.toString());
+                                     } else {
+                                         result.success(null);
+                                     }
+                                 }
+                             });
+                         }
                     }).start();
                     return true;
                 }
