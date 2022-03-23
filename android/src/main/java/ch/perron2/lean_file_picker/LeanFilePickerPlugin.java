@@ -128,23 +128,16 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
                     File cacheDir = activity.getCacheDir();
                     File outputFile = new File(cacheDir, name);
                     eventSink.success(true);
-                    //Reverted to Runnable classes to fix issue with android compilation
-                     new Thread(new Runnable() {
-                         @Override
-                         public void run(){
-                             final boolean success = copyFile(documentUri, outputFile);
-                             activity.runOnUiThread(new Runnable() {
-                                 @Override
-                                 public void run(){
-                                     eventSink.success(false);
-                                     if (success) {
-                                         result.success(outputFile.toString());
-                                     } else {
-                                         result.success(null);
-                                     }
-                                 }
-                             });
-                         }
+                    new Thread(() -> {
+                        boolean success = copyFile(documentUri, outputFile);
+                        activity.runOnUiThread(() -> {
+                            eventSink.success(false);
+                            if (success) {
+                                result.success(outputFile.toString());
+                            } else {
+                                result.success(null);
+                            }
+                        });
                     }).start();
                     return true;
                 }
@@ -154,7 +147,7 @@ public class LeanFilePickerPlugin implements FlutterPlugin, MethodCallHandler, A
         }
         return false;
     }
-
+    
     private String queryFileName(ContentResolver resolver, Uri uri) {
         Cursor returnCursor = resolver.query(uri, null, null, null, null);
         if (returnCursor != null) {
